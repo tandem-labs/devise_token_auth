@@ -37,8 +37,10 @@ module DeviseTokenAuth
       elsif @resource && !(!@resource.respond_to?(:active_for_authentication?) || @resource.active_for_authentication?)
         if @resource.respond_to?(:locked_at) && @resource.locked_at
           render_create_error_account_locked
-        else
+        elsif @resource.respond_to?(:confirmed?) && !@resource.confirmed?
           render_create_error_not_confirmed
+        else
+          render_create_error_inactive
         end
       else
         render_create_error_bad_credentials
@@ -98,6 +100,10 @@ module DeviseTokenAuth
       render json: {
         data: resource_data(resource_json: @resource.token_validation_response)
       }
+    end
+
+    def render_create_error_inactive
+      render_error(401, I18n.t("devise_token_auth.sessions.#{@resource.inactive_message}"), email: @resource.email)
     end
 
     def render_create_error_not_confirmed
